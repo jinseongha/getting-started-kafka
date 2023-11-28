@@ -1,0 +1,63 @@
+server:
+  port: 8080
+
+spring:
+  docker:
+    compose:
+      enabled: false
+  kafka:
+    bootstrap-servers: localhost:9092
+    properties:
+      "[schema.registry.url]": http://localhost:8081
+    producer:
+      client-id: example-producer
+      key-serializer: org.apache.kafka.common.serialization.LongSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+    consumer:
+      group-id: example-group
+      key-deserializer: org.apache.kafka.common.serialization.LongDeserializer
+      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+
+app:
+  kafka:
+    broker:
+      partition-count: 3
+      replica-count: 1
+    consumer:
+      dlq-group-id: example-dlq-group
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  kafka:
+    bootstrap-servers: kafka1:9092,kafka2:9092,kafka3:9092
+    properties:
+      "[schema.registry.url]": http://schema-registry:8081
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  docker:
+    compose:
+      enabled: true
+      file: ./docker/docker-compose-kafka-local.yaml
+  kafka:
+    bootstrap-servers: localhost:9092
+    properties:
+      "[schema.registry.url]": http://localhost:8081
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+
+logging:
+  level:
+    root: info
+    org.apache.kafka: info
+    org.springframework.kafka: info

@@ -1,0 +1,12 @@
+{
+  "namespace": "com.illuminarean.gettingstarted.domain.avro",
+  "name": "Book",
+  "type": "record",
+  "fields": [
+    { "name": "id", "type": "long" },
+    { "name": "title", "type": "string" },
+    { "name": "isbn", "type": "string" },
+    { "name": "authors", "type": { "type": "array", "items": "string", "default": [] } },
+    { "name": "publisher", "type": ["string", "null"] }
+  ]
+}
