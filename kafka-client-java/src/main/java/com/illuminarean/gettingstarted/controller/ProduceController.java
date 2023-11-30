@@ -2,7 +2,7 @@ package com.illuminarean.gettingstarted.controller;
 
 import com.illuminarean.gettingstarted.domain.avro.Book;
 import com.illuminarean.gettingstarted.domain.dto.BookSaveRequest;
-import com.illuminarean.gettingstarted.domain.vo.TopicConstant;
+import com.illuminarean.gettingstarted.domain.vo.TopicName;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +24,7 @@ public class ProduceController {
                 .setAuthors(book.getAuthors())
                 .setPublisher(book.getPublisher())
                 .build();
-        kafkaTemplate.send(TopicConstant.BOOK, Long.valueOf(bookId), bookRecord);
+        kafkaTemplate.send(TopicName.BOOK, Long.valueOf(bookId), bookRecord);
     }
 
     @PostMapping(path = "/books")
@@ -37,7 +37,7 @@ public class ProduceController {
                     .setAuthors(book.getAuthors())
                     .setPublisher(book.getPublisher())
                     .build();
-            kafkaTemplate.send(TopicConstant.BOOK, book.getId(), bookRecord);
+            kafkaTemplate.send(TopicName.BOOK, book.getId(), bookRecord);
         });
     }
 }

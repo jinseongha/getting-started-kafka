@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import com.illuminarean.gettingstarted.domain.avro.Book;
 import com.illuminarean.gettingstarted.domain.dto.BookSaveRequest;
-import com.illuminarean.gettingstarted.domain.vo.BookConstant;
-import com.illuminarean.gettingstarted.domain.vo.TopicConstant;
+import com.illuminarean.gettingstarted.domain.vo.BookInfo;
+import com.illuminarean.gettingstarted.domain.vo.TopicName;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
@@ -86,11 +86,11 @@ class BookIntegrationTest extends AbstractKafkaClusterSupport {
 
     private static void assertHasKeyAndValue(ConsumerRecord<Long, GenericRecord> record, Long key, Book book) {
         assertThat(record, KafkaMatchers.hasKey(key));
-        assertEquals(record.value().get(BookConstant.ID), book.getId());
-        assertEquals(record.value().get(BookConstant.TITLE), book.getTitle());
-        assertEquals(record.value().get(BookConstant.ISBN), book.getIsbn());
-        assertEquals(record.value().get(BookConstant.AUTHORS), book.getAuthors());
-        assertEquals(record.value().get(BookConstant.PUBLISHER), book.getPublisher());
+        assertEquals(record.value().get(BookInfo.ID), book.getId());
+        assertEquals(record.value().get(BookInfo.TITLE), book.getTitle());
+        assertEquals(record.value().get(BookInfo.ISBN), book.getIsbn());
+        assertEquals(record.value().get(BookInfo.AUTHORS), book.getAuthors());
+        assertEquals(record.value().get(BookInfo.PUBLISHER), book.getPublisher());
     }
 
     private Map<String, Object> getAdminProps() {
@@ -130,9 +130,10 @@ class BookIntegrationTest extends AbstractKafkaClusterSupport {
 
     public void executeCreateTopicOperations(List<String> topics) {
         try (final var adminClient = AdminClient.create(getAdminProps())) {
-            adminClient.createTopics(topics.stream()
+            final var topicList = topics.stream()
                     .map(topic -> new NewTopic(topic, partitionCount, (short) replicaCount))
-                    .collect(Collectors.toList()));
+                    .toList();
+            adminClient.createTopics(topicList);
         }
     }
 
@@ -172,8 +173,8 @@ class BookIntegrationTest extends AbstractKafkaClusterSupport {
 
     @AfterEach
     void tearDown() {
-        Awaitility.await().untilAsserted(() -> executeDeleteTopicOperations(List.of(TopicConstant.BOOK)));
-        Awaitility.await().untilAsserted(() -> executeCreateTopicOperations(List.of(TopicConstant.BOOK)));
+        Awaitility.await().untilAsserted(() -> executeDeleteTopicOperations(List.of(TopicName.BOOK)));
+        Awaitility.await().untilAsserted(() -> executeCreateTopicOperations(List.of(TopicName.BOOK)));
     }
 
     @Test
@@ -196,7 +197,7 @@ class BookIntegrationTest extends AbstractKafkaClusterSupport {
         result.andDo(print())
                 .andExpect(status().isOk());
 
-        final var records = getRecordBlockingQueue(TopicConstant.BOOK, "book-test-group", Book.class);
+        final var records = getRecordBlockingQueue(TopicName.BOOK, "book-test-group", Book.class);
         final var received = records.poll(10, TimeUnit.SECONDS);
         assert received != null;
         assertHasKeyAndValue(received, received.key(), mapToAvroRecord(book));
@@ -210,7 +211,6 @@ class BookIntegrationTest extends AbstractKafkaClusterSupport {
         final var books = getBooks();
         final var bookMap = books.stream()
                 .collect(Collectors.toMap(BookSaveRequest::getId, BookIntegrationTest::mapToAvroRecord));
-        var v = objectMapper.writeValueAsString(books);
 
         // act
         final var result = mockMvc.perform(post("/api/v1/produce/books")
@@ -221,7 +221,7 @@ class BookIntegrationTest extends AbstractKafkaClusterSupport {
         result.andDo(print())
                 .andExpect(status().isOk());
 
-        final var records = getRecordBlockingQueue(TopicConstant.BOOK, "books-test-group", Book.class);
+        final var records = getRecordBlockingQueue(TopicName.BOOK, "books-test-group", Book.class);
         for (int i = 0; i < books.size(); i++) {
             final var received = records.poll(10, TimeUnit.SECONDS);
             assert received != null;
