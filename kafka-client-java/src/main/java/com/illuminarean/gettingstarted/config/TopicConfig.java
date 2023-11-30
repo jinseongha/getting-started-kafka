@@ -1,6 +1,6 @@
 package com.illuminarean.gettingstarted.config;
 
-import com.illuminarean.gettingstarted.domain.vo.TopicConstant;
+import com.illuminarean.gettingstarted.domain.vo.TopicName;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,12 +18,12 @@ public class TopicConfig {
     @Bean
     public KafkaAdmin.NewTopics topics() {
         return new KafkaAdmin.NewTopics(
-                TopicBuilder.name(TopicConstant.BOOK)
+                TopicBuilder.name(TopicName.BOOK)
                         .partitions(partitionCount)
                         .replicas(replicaCount)
                         .compact()
                         .build(),
-                TopicBuilder.name(TopicConstant.BOOK_DLQ)
+                TopicBuilder.name(TopicName.BOOK_DLQ)
                         .partitions(partitionCount)
                         .replicas(replicaCount)
                         .compact()
