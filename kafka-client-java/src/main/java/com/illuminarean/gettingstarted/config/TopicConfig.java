@@ -3,11 +3,11 @@ package com.illuminarean.gettingstarted.config;
 import com.illuminarean.gettingstarted.domain.vo.TopicConstant;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaAdmin;
-import org.springframework.stereotype.Component;
 
-@Component
+@Configuration
 public class TopicConfig {
     @Value("${app.kafka.broker.partition-count}")
     private int partitionCount;

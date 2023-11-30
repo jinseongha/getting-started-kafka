@@ -11,7 +11,7 @@ import java.io.File;
 
 @ContextConfiguration(initializers = AbstractKafkaClusterSupport.Initializer.class)
 abstract class AbstractKafkaClusterSupport {
-    public static DockerComposeContainer<?> environment =
+    static DockerComposeContainer<?> environment =
             new DockerComposeContainer<>(new File("docker/docker-compose-kafka-local.yaml"))
                     .waitingFor("zookeeper", Wait.forHealthcheck())
                     .waitingFor("schema-registry", Wait.forHealthcheck())

@@ -130,9 +130,10 @@ class BookIntegrationTest extends AbstractKafkaClusterSupport {
 
     public void executeCreateTopicOperations(List<String> topics) {
         try (final var adminClient = AdminClient.create(getAdminProps())) {
-            adminClient.createTopics(topics.stream()
+            final var topicList = topics.stream()
                     .map(topic -> new NewTopic(topic, partitionCount, (short) replicaCount))
-                    .collect(Collectors.toList()));
+                    .toList();
+            adminClient.createTopics(topicList);
         }
     }
 
