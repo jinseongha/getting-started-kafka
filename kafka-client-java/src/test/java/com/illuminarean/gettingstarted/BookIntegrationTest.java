@@ -210,7 +210,6 @@ class BookIntegrationTest extends AbstractKafkaClusterSupport {
         final var books = getBooks();
         final var bookMap = books.stream()
                 .collect(Collectors.toMap(BookSaveRequest::getId, BookIntegrationTest::mapToAvroRecord));
-        var v = objectMapper.writeValueAsString(books);
 
         // act
         final var result = mockMvc.perform(post("/api/v1/produce/books")
