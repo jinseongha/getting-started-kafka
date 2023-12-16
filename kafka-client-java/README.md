@@ -6,13 +6,13 @@
 
 ## 요구사항
 
-- Java 17
+- Java 21
 - Docker, Docker Compose
 
 ## 테스트 환경
 
-- Amazon Corretto JDK 17 (OpenJDK)
-- Spring Boot 3.1.6
+- Amazon Corretto JDK 21 (OpenJDK)
+- Spring Boot 3.2.0
 - Docker 24.0.6
 - Docker Compose 2.23.0
 
@@ -40,15 +40,15 @@ docker run -it --rm --network kafka-cluster kafka-client-java:0.0.1-SNAPSHOT
 
 ### test
 
-테스트를 실행하면, testcontainers에서 docker-compose-kafka-test.yaml 파일을 사용한다.
+테스트를 실행하면, testcontainers에서 docker-compose-kafka-local.yaml 파일을 사용한다.
 
 ## 요청 흐름
 
-클라이언트에서 컨트롤러에 요청을 보내면, 컨트롤러에서 kafkaTemplate(produer)을 사용하여 메시지를 전송한다.
+클라이언트에서 컨트롤러에 요청을 보내면, 컨트롤러에서 kafkaTemplate(producer)을 사용하여 메시지를 전송한다.
 
 ```text
 client (cURL) --------> ProduceController ----------->  kafka-cluster
-          POST (book/books)             producer send()
+        POST (book or books)             producer send()
              JSON data               Avro data (serialize)
 ```
 
@@ -62,11 +62,16 @@ client (cURL) --------> ProduceController ----------->  kafka-cluster
 
 ## 요청 예제
 
+a book:
+
 ```shell
-### a book
-curl -X POST -H "Content-Type: application/json" http://localhost:8080/api/v1/produce/books/11 -d '{"id":11,"title":"Kafka: The Definitive Guide, 2nd Edition","isbn":"978-1492043089","authors":["Gwen Shapira","Todd Palino","Rajini Sivaram","Krit Petty"],"publisher":"O'\''Reilly Media"}'
-### books
-curl -X POST -H "Content-Type: application/json" http://localhost:8080/api/v1/produce/books -d '[{"id":1,"title":"Kafka: The Definitive Guide, 2nd Edition","isbn":"978-1492043089","authors":["Gwen Shapira","Todd Palino","Rajini Sivaram","Krit Petty"],"publisher":"O'\''Reilly Media"},{"id":2,"title":"Kafka in Action","isbn":"978-1617295232","authors":["Dylan Scott, Viktor Gamov, Dave Klein"],"publisher":"Manning Publications"},{"id":3,"title":"Kafka Streams in Action","isbn":"978-1617294471","authors":["William P. Bejeck Jr."],"publisher":"Manning Publications"},{"id":4,"title":"Building Event-Driven Microservices","isbn":"978-1492057895","authors":["Adam Bellemare"],"publisher":"O'\''Reilly Media"},{"id":5,"title":"Designing Data-Intensive Applications","isbn":"978-1449373320","authors":["Martin Kleppmann"],"publisher":"O'\''Reilly Media"},{"id":6,"title":"Implementing Domain-Driven Design","isbn":"978-0321834577","authors":["Vaughn Vernon"],"publisher":"Addison-Wesley Professional"},{"id":7,"title":"Fundamentals of Software Architecture","isbn":"978-1492043454","authors":["Mark Richards","Neal Ford"],"publisher":"O'\''Reilly Media"},{"id":8,"title":"Clean Code","isbn":"978-0132350884","authors":["Robert C. Martin"],"publisher":"Pearson"},{"id":9,"title":"Clean Architecture","isbn":"978-0134494166","authors":["Robert C. Martin"],"publisher":"Pearson"},{"id":10,"title":"Design Patterns","isbn":"978-0201633610","authors":["Erich Gamma","Richard Helm","Ralph Johnson","John Vlissides"],"publisher":"Addison-Wesley Professional"}]'
+curl -X POST -H "Content-Type: application/json" http://localhost:8080/api/v1/books/11 -d '{"id":11,"title":"Kafka: The Definitive Guide, 2nd Edition","isbn":"978-1492043089","authors":["Gwen Shapira","Todd Palino","Rajini Sivaram","Krit Petty"],"publisher":"O'\''Reilly Media"}'
+```
+
+books:
+
+```shell
+curl -X POST -H "Content-Type: application/json" http://localhost:8080/api/v1/books -d '[{"id":1,"title":"Kafka: The Definitive Guide, 2nd Edition","isbn":"978-1492043089","authors":["Gwen Shapira","Todd Palino","Rajini Sivaram","Krit Petty"],"publisher":"O'\''Reilly Media"},{"id":2,"title":"Kafka in Action","isbn":"978-1617295232","authors":["Dylan Scott, Viktor Gamov, Dave Klein"],"publisher":"Manning Publications"},{"id":3,"title":"Kafka Streams in Action","isbn":"978-1617294471","authors":["William P. Bejeck Jr."],"publisher":"Manning Publications"},{"id":4,"title":"Building Event-Driven Microservices","isbn":"978-1492057895","authors":["Adam Bellemare"],"publisher":"O'\''Reilly Media"},{"id":5,"title":"Designing Data-Intensive Applications","isbn":"978-1449373320","authors":["Martin Kleppmann"],"publisher":"O'\''Reilly Media"},{"id":6,"title":"Implementing Domain-Driven Design","isbn":"978-0321834577","authors":["Vaughn Vernon"],"publisher":"Addison-Wesley Professional"},{"id":7,"title":"Fundamentals of Software Architecture","isbn":"978-1492043454","authors":["Mark Richards","Neal Ford"],"publisher":"O'\''Reilly Media"},{"id":8,"title":"Clean Code","isbn":"978-0132350884","authors":["Robert C. Martin"],"publisher":"Pearson"},{"id":9,"title":"Clean Architecture","isbn":"978-0134494166","authors":["Robert C. Martin"],"publisher":"Pearson"},{"id":10,"title":"Design Patterns","isbn":"978-0201633610","authors":["Erich Gamma","Richard Helm","Ralph Johnson","John Vlissides"],"publisher":"Addison-Wesley Professional"}]'
 ```
 
 ## testcontainers 라이브러리
