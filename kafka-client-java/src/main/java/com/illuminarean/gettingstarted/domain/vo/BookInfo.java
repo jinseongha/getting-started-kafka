@@ -1,8 +1,9 @@
 package com.illuminarean.gettingstarted.domain.vo;
 
+import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
-@NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class BookInfo {
     public static final String ID = "id";
     public static final String TITLE = "title";

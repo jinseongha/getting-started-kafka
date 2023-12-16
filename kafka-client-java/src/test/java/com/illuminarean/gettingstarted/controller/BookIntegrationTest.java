@@ -1,46 +1,21 @@
-package com.illuminarean.gettingstarted;
+package com.illuminarean.gettingstarted.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Maps;
 import com.illuminarean.gettingstarted.domain.avro.Book;
 import com.illuminarean.gettingstarted.domain.dto.BookSaveRequest;
 import com.illuminarean.gettingstarted.domain.vo.BookInfo;
 import com.illuminarean.gettingstarted.domain.vo.TopicName;
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig;
-import io.confluent.kafka.serializers.KafkaAvroDeserializer;
-import io.confluent.kafka.serializers.KafkaAvroSerializer;
-import lombok.extern.slf4j.Slf4j;
+import com.illuminarean.gettingstarted.support.KafkaOperationSupport;
+import com.illuminarean.gettingstarted.support.RestIntegrationTestSupport;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.LongDeserializer;
-import org.apache.kafka.common.serialization.LongSerializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
-import org.springframework.kafka.listener.ContainerProperties;
-import org.springframework.kafka.listener.KafkaMessageListenerContainer;
-import org.springframework.kafka.listener.MessageListener;
 import org.springframework.kafka.test.hamcrest.KafkaMatchers;
-import org.springframework.kafka.test.utils.ContainerTestUtils;
-import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.shaded.org.awaitility.Awaitility;
 
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -52,27 +27,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ActiveProfiles("test")
-@Slf4j
-@SpringBootTest
-@AutoConfigureMockMvc
-class BookIntegrationTest extends AbstractKafkaClusterSupport {
+class BookIntegrationTest extends RestIntegrationTestSupport {
     @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Value("${spring.kafka.bootstrap-servers}")
-    private String bootstrapServers;
-
-    @Value("${spring.kafka.properties.[schema.registry.url]}")
-    private String schemaRegistryUrl;
-
-    @Value("${app.kafka.broker.partition-count}")
-    private int partitionCount;
-
-    @Value("${app.kafka.broker.replica-count}")
-    private int replicaCount;
+    private KafkaOperationSupport kafkaOperationSupport;
 
     private static Book mapToAvroRecord(BookSaveRequest book) {
         return Book.newBuilder()
@@ -91,60 +48,6 @@ class BookIntegrationTest extends AbstractKafkaClusterSupport {
         assertEquals(record.value().get(BookInfo.ISBN), book.getIsbn());
         assertEquals(record.value().get(BookInfo.AUTHORS), book.getAuthors());
         assertEquals(record.value().get(BookInfo.PUBLISHER), book.getPublisher());
-    }
-
-    private Map<String, Object> getAdminProps() {
-        final var props = Maps.<String, Object>newHashMap();
-        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        return props;
-    }
-
-    private Map<String, Object> getProducerProps() {
-        final var producerProps = KafkaTestUtils.producerProps(bootstrapServers);
-        producerProps.put(SchemaRegistryClientConfig.CLIENT_NAMESPACE + "url", schemaRegistryUrl);
-        producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class);
-        producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
-        return producerProps;
-    }
-
-    private Map<String, Object> getConsumerProps(String group) {
-        final var consumerProps = KafkaTestUtils.consumerProps(bootstrapServers, group, "true");
-        consumerProps.put(SchemaRegistryClientConfig.CLIENT_NAMESPACE + "url", schemaRegistryUrl);
-        consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class);
-        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
-        return consumerProps;
-    }
-
-    private <T> BlockingQueue<ConsumerRecord<Long, GenericRecord>> getRecordBlockingQueue(String topic, String group, T recordClass) {
-        final var consumerProps = getConsumerProps(group);
-        final var consumerFactory = new DefaultKafkaConsumerFactory<Long, T>(consumerProps);
-        final var containerProperties = new ContainerProperties(topic);
-        final var container = new KafkaMessageListenerContainer<>(consumerFactory, containerProperties);
-        final BlockingQueue<ConsumerRecord<Long, GenericRecord>> records = new LinkedBlockingQueue<>();
-        container.setupMessageListener((MessageListener<Long, GenericRecord>) records::add);
-        container.setBeanName("recordBlockingQueue");
-        container.start();
-        ContainerTestUtils.waitForAssignment(container, partitionCount);
-        return records;
-    }
-
-    public void executeCreateTopicOperations(List<String> topics) {
-        try (final var adminClient = AdminClient.create(getAdminProps())) {
-            final var topicList = topics.stream()
-                    .map(topic -> new NewTopic(topic, partitionCount, (short) replicaCount))
-                    .toList();
-            adminClient.createTopics(topicList);
-        }
-    }
-
-    public void executeDeleteTopicOperations(List<String> topics) {
-        try (final var adminClient = AdminClient.create(getAdminProps())) {
-            adminClient.listTopics().names().get().stream()
-                    .filter(topics::contains)
-                    .forEach(topic -> adminClient.deleteTopics(List.of(topic)));
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private List<BookSaveRequest> getBooks() {
@@ -173,8 +76,8 @@ class BookIntegrationTest extends AbstractKafkaClusterSupport {
 
     @AfterEach
     void tearDown() {
-        Awaitility.await().untilAsserted(() -> executeDeleteTopicOperations(List.of(TopicName.BOOK)));
-        Awaitility.await().untilAsserted(() -> executeCreateTopicOperations(List.of(TopicName.BOOK)));
+        Awaitility.await().untilAsserted(() -> kafkaOperationSupport.executeDeleteTopicOperations(List.of(TopicName.BOOK)));
+        Awaitility.await().untilAsserted(() -> kafkaOperationSupport.executeCreateTopicOperations(List.of(TopicName.BOOK)));
     }
 
     @Test
@@ -189,7 +92,7 @@ class BookIntegrationTest extends AbstractKafkaClusterSupport {
                 .build();
 
         // act
-        final var result = mockMvc.perform(post("/api/v1/produce/books/1")
+        final var result = mockMvc.perform(post("/api/v1/books/1")
                 .contentType(APPLICATION_JSON)
                 .content(objectMapper.writeValueAsBytes(book)));
 
@@ -197,7 +100,7 @@ class BookIntegrationTest extends AbstractKafkaClusterSupport {
         result.andDo(print())
                 .andExpect(status().isOk());
 
-        final var records = getRecordBlockingQueue(TopicName.BOOK, "book-test-group", Book.class);
+        final var records = kafkaOperationSupport.getRecordBlockingQueue(TopicName.BOOK, "book-test-group");
         final var received = records.poll(10, TimeUnit.SECONDS);
         assert received != null;
         assertHasKeyAndValue(received, received.key(), mapToAvroRecord(book));
@@ -213,7 +116,7 @@ class BookIntegrationTest extends AbstractKafkaClusterSupport {
                 .collect(Collectors.toMap(BookSaveRequest::getId, BookIntegrationTest::mapToAvroRecord));
 
         // act
-        final var result = mockMvc.perform(post("/api/v1/produce/books")
+        final var result = mockMvc.perform(post("/api/v1/books")
                 .contentType(APPLICATION_JSON)
                 .content(objectMapper.writeValueAsBytes(books)));
 
@@ -221,7 +124,7 @@ class BookIntegrationTest extends AbstractKafkaClusterSupport {
         result.andDo(print())
                 .andExpect(status().isOk());
 
-        final var records = getRecordBlockingQueue(TopicName.BOOK, "books-test-group", Book.class);
+        final var records = kafkaOperationSupport.getRecordBlockingQueue(TopicName.BOOK, "books-test-group");
         for (int i = 0; i < books.size(); i++) {
             final var received = records.poll(10, TimeUnit.SECONDS);
             assert received != null;
