@@ -1,22 +1,22 @@
 package com.illuminarean.gettingstarted.config;
 
+import com.illuminarean.gettingstarted.config.properties.KafkaPropConfig;
 import com.illuminarean.gettingstarted.domain.vo.TopicName;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaAdmin;
 
 @Configuration
+@RequiredArgsConstructor
 public class TopicConfig {
-    @Value("${app.kafka.broker.partition-count}")
-    private int partitionCount;
-
-    @Value("${app.kafka.broker.replica-count}")
-    private int replicaCount;
+    private final KafkaPropConfig kafkaPropConfig;
 
     @Bean
     public KafkaAdmin.NewTopics topics() {
+        final var partitionCount = kafkaPropConfig.getBroker().partitionCount();
+        final var replicaCount = kafkaPropConfig.getBroker().replicationCount();
         return new KafkaAdmin.NewTopics(
                 TopicBuilder.name(TopicName.BOOK)
                         .partitions(partitionCount)

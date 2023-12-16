@@ -10,12 +10,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping(value = "/api/v1/produce")
+@RequestMapping(value = "/api/v1/books")
 @RequiredArgsConstructor
-public class ProduceController {
+public class BookController {
     private final KafkaTemplate<Long, Book> kafkaTemplate;
 
-    @PostMapping(path = "/books/{bookId}")
+    @PostMapping(path = "/{bookId}")
     public void saveBook(@PathVariable String bookId, @RequestBody BookSaveRequest book) {
         final var bookRecord = Book.newBuilder()
                 .setId(book.getId())
@@ -27,7 +27,7 @@ public class ProduceController {
         kafkaTemplate.send(TopicName.BOOK, Long.valueOf(bookId), bookRecord);
     }
 
-    @PostMapping(path = "/books")
+    @PostMapping
     public void saveBooks(@RequestBody List<BookSaveRequest> books) {
         books.forEach(book -> {
             final var bookRecord = Book.newBuilder()
