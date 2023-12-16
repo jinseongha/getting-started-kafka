@@ -6,13 +6,13 @@
 
 ## 요구사항
 
-- Java 17
+- Java 21
 - Docker, Docker Compose
 
 ## 테스트 환경
 
-- Amazon Corretto JDK 17 (OpenJDK)
-- Spring Boot 3.1.6
+- Amazon Corretto JDK 21 (OpenJDK)
+- Spring Boot 3.2.0
 - Docker 24.0.6
 - Docker Compose 2.23.0
 
