@@ -66,7 +66,7 @@ public class KafkaOperationSupport {
     }
 
     public BlockingQueue<ConsumerRecord<Long, GenericRecord>> getRecordBlockingQueue(String topic, String group) {
-        final var partitionCount = kafkaPropConfig.getBroker().partitionCount();
+        final var partitionCount = kafkaPropConfig.broker().partitionCount();
         final var consumerProps = getConsumerProps(group);
         final var consumerFactory = new DefaultKafkaConsumerFactory<Long, GenericRecord>(consumerProps);
         final var containerProperties = new ContainerProperties(topic);
@@ -80,8 +80,8 @@ public class KafkaOperationSupport {
     }
 
     public void executeCreateTopicOperations(List<String> topics) {
-        final var partitionCount = kafkaPropConfig.getBroker().partitionCount();
-        final var replicationCount = kafkaPropConfig.getBroker().replicationCount();
+        final var partitionCount = kafkaPropConfig.broker().partitionCount();
+        final var replicationCount = kafkaPropConfig.broker().replicationCount();
         try (final var adminClient = AdminClient.create(getAdminProps())) {
             final var topicList = topics.stream()
                     .map(topic -> new NewTopic(topic, partitionCount, (short) replicationCount))
