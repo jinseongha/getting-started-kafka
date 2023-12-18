@@ -15,8 +15,8 @@ public class TopicConfig {
 
     @Bean
     public KafkaAdmin.NewTopics topics() {
-        final var partitionCount = kafkaPropConfig.getBroker().partitionCount();
-        final var replicaCount = kafkaPropConfig.getBroker().replicationCount();
+        final var partitionCount = kafkaPropConfig.broker().partitionCount();
+        final var replicaCount = kafkaPropConfig.broker().replicationCount();
         return new KafkaAdmin.NewTopics(
                 TopicBuilder.name(TopicName.BOOK)
                         .partitions(partitionCount)
