@@ -15,6 +15,7 @@ public abstract class ContainerIntegrationSupport {
             new DockerComposeContainer<>(new File("docker/docker-compose-kafka-local.yaml"))
                     .waitingFor("zookeeper", Wait.forHealthcheck())
                     .waitingFor("schema-registry", Wait.forHealthcheck())
+                    .waitingFor("kafka-rest", Wait.forHealthcheck())
                     .withLocalCompose(true);
 
     protected static class Initializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
