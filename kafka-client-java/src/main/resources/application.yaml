@@ -22,7 +22,7 @@ app:
   kafka:
     broker:
       partition-count: 3
-      replica-count: 1
+      replication-count: 1
     consumer:
       dlq-group-id: example-dlq-group
 

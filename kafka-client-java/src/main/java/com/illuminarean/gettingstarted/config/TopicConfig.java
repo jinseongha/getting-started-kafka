@@ -16,16 +16,16 @@ public class TopicConfig {
     @Bean
     public KafkaAdmin.NewTopics topics() {
         final var partitionCount = kafkaPropConfig.broker().partitionCount();
-        final var replicaCount = kafkaPropConfig.broker().replicationCount();
+        final var replicationCount = kafkaPropConfig.broker().replicationCount();
         return new KafkaAdmin.NewTopics(
                 TopicBuilder.name(TopicName.BOOK)
                         .partitions(partitionCount)
-                        .replicas(replicaCount)
+                        .replicas(replicationCount)
                         .compact()
                         .build(),
                 TopicBuilder.name(TopicName.BOOK_DLQ)
                         .partitions(partitionCount)
-                        .replicas(replicaCount)
+                        .replicas(replicationCount)
                         .compact()
                         .build());
     }
